@@ -1,12 +1,12 @@
 /**
  * Copyright 2012 Google Inc. All Rights Reserved.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,47 +17,55 @@
 package com.google.appengine.demos;
 
 import com.google.appengine.api.utils.SystemProperty;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.persist.PersistService;
 
+import javax.persistence.EntityManager;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.servlet.http.*;
 
+@Singleton
 public class HibernateJpaServlet extends HttpServlet {
-  public void doGet(HttpServletRequest req, HttpServletResponse res)
-      throws IOException {
-    res.setContentType("text/plain");
 
-    Map<String, String> properties = new HashMap();
-    if (SystemProperty.environment.value() ==
-          SystemProperty.Environment.Value.Production) {
-      properties.put("javax.persistence.jdbc.driver",
-          "com.mysql.jdbc.GoogleDriver");
-      properties.put("javax.persistence.jdbc.url",
-          System.getProperty("cloudsql.url"));
-    } else {
-      properties.put("javax.persistence.jdbc.driver",
-          "com.mysql.jdbc.Driver");
-      properties.put("javax.persistence.jdbc.url",
-          System.getProperty("cloudsql.url.dev"));
-    }
+	@Inject
+	EntityManager entityManager;
 
-    EntityManagerFactory emf = Persistence.createEntityManagerFactory(
-        "Demo", properties);
+	@Inject
+	PersistService persistService;
 
-    // Insert a few rows.
-    EntityManager em = emf.createEntityManager();
-    em.getTransaction().begin();
-    em.persist(new Greeting("user", new Date(), "Hello!"));
-    em.persist(new Greeting("user", new Date(), "Hi!"));
-    em.getTransaction().commit();
-    em.close();
+	public void doGet(HttpServletRequest req, HttpServletResponse res)
+			throws IOException {
+		res.setContentType("text/plain");
 
+		Map<String, String> properties = new HashMap<>();
+		if (SystemProperty.environment.value() ==
+				SystemProperty.Environment.Value.Production) {
+			properties.put("javax.persistence.jdbc.driver",
+					"com.mysql.jdbc.GoogleDriver");
+			properties.put("javax.persistence.jdbc.url",
+					System.getProperty("cloudsql.url"));
+		} else {
+			properties.put("javax.persistence.jdbc.driver",
+					"com.mysql.jdbc.Driver");
+			properties.put("javax.persistence.jdbc.url",
+					System.getProperty("cloudsql.url.dev"));
+		}
+
+		res.getWriter().println(entityManager == null ? "NULL" : entityManager.toString());
+		res.getWriter().println(persistService == null ? "NULL" : persistService.toString());
+
+
+		entityManager.getTransaction().begin();
+		entityManager.persist(new Greeting("user", new Date(), "Hello!"));
+		entityManager.persist(new Greeting("user", new Date(), "Hi!"));
+		entityManager.getTransaction().commit();
+/*
     // List all the rows.
     em = emf.createEntityManager();
     em.getTransaction().begin();
@@ -72,6 +80,6 @@ public class HibernateJpaServlet extends HttpServlet {
     }
     em.getTransaction().commit();
     em.close();
-
-  }
+	   */
+	}
 }
